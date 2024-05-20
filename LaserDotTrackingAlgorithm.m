@@ -4,7 +4,7 @@ close all
 
 % Remove any old messageboxes
 oldMessageBoxes = findall(0, 'Type', 'Figure');
-delete(oldMessageBoxes( arrayfun(@(h) contains(h.Tag, 'Msgbox'), oldMessageBoxes)))
+delete(oldMessageBoxes(arrayfun(@(h) contains(h.Tag, 'Msgbox'), oldMessageBoxes)))
 
 % Making windows fullscreen
 set(groot, 'defaultFigureWindowState', 'maximized');
@@ -21,10 +21,10 @@ waitfor(msgbox('Please crop the video so only the paper is shown. Be careful not
 pause(0.2);
 
 % Letting the user crop the video
-video=VideoReader(videoFileName);
+video = VideoReader(videoFileName);
 writerObj = VideoWriter('CroppedVideo.avi');
 open(writerObj);
-firstFrame=readFrame(video);
+firstFrame = readFrame(video);
 [croppedImage, rect] = imcrop(firstFrame);
 
 % Creating a processing bar
@@ -32,12 +32,12 @@ h = waitbar(0, 'Cropping video...', 'Name', 'Video cropper');
 n = video.NumFrames;
 
 % Cropping all frames
-for i=1:n
+for i = 1:n
   waitbar(i / n, h);
-  im=read(video,i);
-  imc=imcrop(im,rect); % Cropping each frame
+  im = read(video,i);
+  imc = imcrop(im,rect); % Cropping each frame
   scaleFactor = 480 / size(imc, 1); 
-  imr=imresize(imc,scaleFactor); % Resizing based on the previous proportions
+  imr = imresize(imc,scaleFactor); % Resizing based on the previous proportions
   writeVideo(writerObj,imr);     
 end
 
@@ -77,22 +77,22 @@ a=1;
 
 while(vidObj.hasFrame)
     vidFrame = readFrame(vidObj);
-    vidframeGreen= vidFrame(:,:,2);
+    vidframeGreen = vidFrame(:,:,2);
     binaryFrame = imbinarize(vidframeGreen,0.93); % Making sure only the laser dot is showing
 
     % Removing unwanted noise from the binary frame
     seSize = 3; % Choose this depending on how far away from the wall the patient is sitting. (If 1m away, choose seSize=1)
     se = strel('disk', seSize);
-    binaryFrame=imopen(binaryFrame,se);
+    binaryFrame = imopen(binaryFrame,se);
   
     stats = regionprops("table",binaryFrame,"Centroid", "MajorAxisLength","MinorAxisLength");
 
-    [~,indexMax]=max(stats.MajorAxisLength);
+    [~,indexMax] = max(stats.MajorAxisLength);
     centers = stats.Centroid(indexMax,:); % Choosing the largest dot 
      if isempty(stats) == 0    % Checking if the laser dot was found to avoid errors
         allCenters(a,1) = centers(1,1);
         allCenters(a,2) = centers(1,2);
-        a=a+1;
+        a = a+1;
      end
 
     hold on % Visualising the tracking of the laser dot 
@@ -113,21 +113,21 @@ delete(h) % Deleting the processing bar
 totalTime = vidObj.NumFrames / vidObj.FrameRate;
 
 % Creating the result message 
-message = sprintf('Thin line: % .2f % % \n', results(1)*100);
-message = [message, sprintf('Thick line: % .2f % % \n', results(2)*100)];
-message = [message, sprintf('Blue zone: % .2f % % \n', results(3)*100)];
-message = [message, sprintf('Yellow zone: % .2f % % \n', results(4)*100)];
-message = [message, sprintf('Red zone: % .2f % % \n', results(5)*100)];
-message = [message, sprintf('Outside: % .2f % % \n', results(6)*100)];
-message = [message, sprintf('Total time: % .2f seconds\n', totalTime)];
+message = sprintf('Thin line: %.2f %%\n', results(1)*100);
+message = [message, sprintf('Thick line: %.2f %%\n', results(2)*100)];
+message = [message, sprintf('Blue zone: %.2f %%\n', results(3)*100)];
+message = [message, sprintf('Yellow zone: %.2f %%\n', results(4)*100)];
+message = [message, sprintf('Red zone: %.2f %%\n', results(5)*100)];
+message = [message, sprintf('Outside: %.2f %%\n', results(6)*100)];
+message = [message, sprintf('Total time: %.2f seconds\n', totalTime)];
 
 % Displaying the results
 msgbox(message, 'Results');
 %% Function videoChooser
-function [videoFileName,videoFilePath] = videoChooser()
+function[videoFileName,videoFilePath] = videoChooser()
 
 [videoFileName,videoFilePath] = uigetfile('*.*', 'Select a file');
-if(videoFilePath==0)
+if(videoFilePath == 0)
     return;
 end
 end
@@ -222,15 +222,15 @@ end
 
 %% Function zoneCalculator
 function [results] = zoneCalculator(allCenters, binaryThinLine, binaryThickLine, binaryBlueArea, binaryYellowArea, binaryRedArea,numFrames)
-thinFrames=0;
-thickFrames=0;
-blueFrames=0;
-yellowFrames=0;
-redFrames=0;
+thinFrames = 0;
+thickFrames = 0;
+blueFrames = 0;
+yellowFrames = 0;
+redFrames = 0;
 
 % Going through all centroid coordinates and checking which zone they match
 for i = 1:size(allCenters,1)
-    onThin=0; % Keeping track of whether a surrounding pixel is on the thinLine
+    onThin = 0; % Keeping track of whether a surrounding pixel is on the thinLine
    for a = 1:9 
         switch a
             case 1
@@ -263,26 +263,26 @@ for i = 1:size(allCenters,1)
         end
 
 if allCenters(i,2) >1 && allCenters(i,2)<479 && allCenters(i,1)>1 && allCenters(i,1)<width(binaryThinLine)-1
-if binaryThinLine(int64(allCenters(i,2)) + offset_y, int64(allCenters(i,1)) + offset_x)==0
-        thinFrames=thinFrames+1; % Updating counter if the coordinates match the zone
-        onThin=1;
+if binaryThinLine(int64(allCenters(i,2)) + offset_y, int64(allCenters(i,1)) + offset_x) == 0
+        thinFrames = thinFrames+1; % Updating counter if the coordinates match the zone
+        onThin = 1;
         break;
         
 end
 end
     end
 
-if onThin==0    
-if binaryThickLine(int64(allCenters(i,2)),int64(allCenters(i,1)))==0
+if onThin == 0    
+if binaryThickLine(int64(allCenters(i,2)),int64(allCenters(i,1))) == 0
     thickFrames=thickFrames+1; % Updating counter if the coordinates match the zone
 
-elseif binaryBlueArea(int64(allCenters(i,2)),int64(allCenters(i,1)))==0
+elseif binaryBlueArea(int64(allCenters(i,2)),int64(allCenters(i,1))) == 0
     blueFrames=blueFrames+1; % Updating counter if the coordinates match the zone
 
-elseif binaryYellowArea(int64(allCenters(i,2)),int64(allCenters(i,1)))==0
+elseif binaryYellowArea(int64(allCenters(i,2)),int64(allCenters(i,1))) == 0
     yellowFrames=yellowFrames+1; % Updating counter if the coordinates match the zone
 
-elseif binaryRedArea(int64(allCenters(i,2)),int64(allCenters(i,1)))==0
+elseif binaryRedArea(int64(allCenters(i,2)),int64(allCenters(i,1))) == 0
     redFrames=redFrames+1; % Updating counter if the coordinates match the zone
 
 end
@@ -290,15 +290,15 @@ end
 end
 
 % Calculating the results
-results(1)=thinFrames/numFrames;
-results(2)=thickFrames/numFrames;
-results(3)=blueFrames/numFrames;
-results(4)=yellowFrames/numFrames;
-results(5)=redFrames/numFrames;
+results(1) = thinFrames/numFrames;
+results(2) = thickFrames/numFrames;
+results(3) = blueFrames/numFrames;
+results(4) = yellowFrames/numFrames;
+results(5) = redFrames/numFrames;
 
 % All centroids that weren't located in a zone belong to the outside
-untracked=numFrames-size(allCenters,1);
-results(6)=((size(allCenters,1)-thinFrames-thickFrames-blueFrames-yellowFrames-redFrames)+untracked)/numFrames;
+untracked = numFrames-size(allCenters,1);
+results(6) = ((size(allCenters,1)-thinFrames-thickFrames-blueFrames-yellowFrames-redFrames)+untracked)/numFrames;
 
 end
 
@@ -319,16 +319,16 @@ thickness(3) = thickness(2)+segment; % Blue
 thickness(4) = thickness(2)+1.9*segment; % Yellow
 thickness(5) = thickness(2)+2.8*segment; % Red
 
-binaryThinLine=drawLine(x_corners,y_corners,thickness(1),frame,0,0);
-binaryThickLine=drawLine(x_corners,y_corners,thickness(2),frame,0.8,2);
-binaryBlueArea=drawLine(x_corners,y_corners,thickness(3),frame,0.86,1.95);
-binaryYellowArea=drawLine(x_corners,y_corners,thickness(4),frame,0.92,1.9);
-binaryRedArea=drawLine(x_corners,y_corners,thickness(5),frame,0.98,1.9);
+binaryThinLine = drawLine(x_corners,y_corners,thickness(1),frame,0,0);
+binaryThickLine = drawLine(x_corners,y_corners,thickness(2),frame,0.8,2);
+binaryBlueArea = drawLine(x_corners,y_corners,thickness(3),frame,0.86,1.95);
+binaryYellowArea = drawLine(x_corners,y_corners,thickness(4),frame,0.92,1.9);
+binaryRedArea = drawLine(x_corners,y_corners,thickness(5),frame,0.98,1.9);
 
 end
 
 %% Function drawLine
-function[binaryIm]=drawLine(x_corners,y_corners,thickness,frame,factor,factor2)
+function[binaryIm] = drawLine(x_corners,y_corners,thickness,frame,factor,factor2)
 whiteImage = ones(size(frame), 'uint8') * 255; % White image used as background for the zones
 
 color = [0 0 1]; % Choosing blue as the color for the plots
